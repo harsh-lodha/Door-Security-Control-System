@@ -231,14 +231,14 @@ start:
 	call clear_LCD	
 	call welcome_msg
 	mov bp,00h
-	call keypad_inp
+	call keypad_input
 	cmp al,0bbh
 	jz master_mode
 	jmp start
 		
 x6: call clear_LCD
 	call welcome_msg
-	call keypad_inp
+	call keypad_input
 	cmp al,0b7h
 	jz user_mode
 	jmp x6 		
@@ -248,7 +248,7 @@ master_mode:
    mov bp,0abcdh
    cmp ax,0abcdh
    jnz x6
-x8:   call keypad_inp
+x8:   call keypad_input
 	cmp al,7Dh;A key
 	jz alarm_mode
 	jnz x8	
@@ -316,7 +316,7 @@ clear_LCD proc
 RET
 clear_LCD endp
 
-pressenter_LCD proc
+enter_LCD proc
 	mov al,0A0h
 	out A1,al
 	call DELAY_20ms
@@ -434,9 +434,9 @@ pressenter_LCD proc
 	mov al,01h
 	out B1,al  ;prints R
 RET
-pressenter_LCD endp	
+enter_LCD endp	
 
-keypad_inp proc ;SubR for keypad entry,al has unique key input value.
+keypad_input proc ;SubR for keypad entry,al has unique key input value.
 x0:		mov al,00h
 		out 04h,al
 x1:		in al,04h
@@ -498,7 +498,7 @@ x2:		;in al,0ch
 		
 x3:		or al,bl		
 ret
-keypad_inp endp
+keypad_input endp
 
 Print_* proc
 		mov al,2Ah
@@ -522,7 +522,7 @@ intmaster proc
 						;store the 16-bit entered pass after the hard coded pass word	
 
 enter_16bit:		
-		call keypad_inp
+		call keypad_input
 		cmp al,7eh
 		jz pressc
 		cmp al,7bh
@@ -541,7 +541,7 @@ enter_16bit:
 		dec cx
 		jnz enter_16bit
 disp_entermaster:
-		call keypad_inp
+		call keypad_input
 		cmp al,7eh
 		jz pressc
 		cmp al,7bh
@@ -549,8 +549,8 @@ disp_entermaster:
 		cmp al,77h
 		jz press_enter	
 asd:	CALL clear_LCD; for other keys
-		CALL pressenter_LCD	;add code here to display 'PRESS ENTER' on lcd
-		call keypad_inp
+		CALL enter_LCD	;add code here to display 'PRESS ENTER' on lcd
+		call keypad_input
 		cmp al,77h
 		jz press_enter
 		jnz asd		
@@ -585,7 +585,7 @@ day_pass:
 		call clear_LCD
 		mov cx,12
 enter_12bit:		
-		call keypad_inp
+		call keypad_input
 		cmp al,7eh
 		jz presscday
 		cmp al,0bbh
@@ -604,7 +604,7 @@ enter_12bit:
 		dec cx
 		jnz enter_12bit	
 disp_enter:
-			call keypad_inp
+			call keypad_input
 			cmp al,7eh
 			jz presscday
 			cmp al,7bh
@@ -612,8 +612,8 @@ disp_enter:
 			cmp al,77h
 			jz press_enterday		
 asd1:		CALL clear_LCD
-			CALL pressenter_LCD				;add code here to display 'PRESS ENTER' on lcd
-			call keypad_inp
+			CALL enter_LCD				;add code here to display 'PRESS ENTER' on lcd
+			call keypad_input
 			cmp al,77h
 			jz press_enterday
 			jnz asd1
@@ -681,7 +681,7 @@ intalarm proc
 	mov cx,14
 	mov si,3ah	;store the 16-bit entered pass after the hard coded pass word	
 enter_14bit:		
-		call keypad_inp
+		call keypad_input
 		cmp al,7eh
 		jz pressc_alarm
 		cmp al,0bbh
@@ -700,7 +700,7 @@ enter_14bit:
 		dec cx
 		jnz enter_14bit		
 disp_enteralarm:
-		call keypad_inp
+		call keypad_input
 		cmp al,7eh
 		jz pressc_alarm
 		cmp al,7bh
@@ -708,8 +708,8 @@ disp_enteralarm:
 		cmp al,77h
 		jz press_enter_alarm
 asd2:	CALL clear_LCD
-		CALL pressenter_LCD	;add code here to display 'PRESS ENTER' on lcd
-		call keypad_inp
+		CALL enter_LCD	;add code here to display 'PRESS ENTER' on lcd
+		call keypad_input
 		cmp al,77h
 		jz press_enter_alarm
 		jnz asd2	
@@ -756,7 +756,7 @@ intuser proc
 	   	mov cx,12
 	    mov si,48h	;store the 16-bit entered pass after the hard coded pass word	
 enter_12bitu:		
-		call keypad_inp
+		call keypad_input
 		cmp al,7eh
 		jz pressc_user
 		cmp al,7bh
@@ -775,7 +775,7 @@ enter_12bitu:
 		dec cx
 		jnz enter_12bitu	
 disp_enter_user:
-		call keypad_inp
+		call keypad_input
 		cmp al,7eh
 		jz pressc_user
 		cmp al,7bh
@@ -783,8 +783,8 @@ disp_enter_user:
 		cmp al,77h
 		jz press_enter_user
 asd3:	CALL clear_LCD
-		CALL pressenter_LCD	;add code here to display 'PRESS ENTER' on lcd
-		call keypad_inp
+		CALL enter_LCD	;add code here to display 'PRESS ENTER' on lcd
+		call keypad_input
 		cmp al,77h
 		jz press_enter_user
 		jnz asd3		
@@ -844,6 +844,17 @@ open_door_user:
 end_70h:
 ret		
 intuser endp
+
+
+ints proc	
+		
+		call open_door
+		
+		; CALL DELAY_0.04s
+		; mov al,00h 
+		; out 0ch,al	
+ret
+ints endp
 
 open_door proc
 	call clear_LCD
@@ -1012,38 +1023,177 @@ welcome_msg proc ;      G55 MUP
 	ret
 welcome_msg endp
 
+update_msg proc	
+	mov al,55h
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints U
+	
+	mov al,50h
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints P
+	
+	mov al,44h
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints D
+		
+	mov al,41h
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints A
+	
+	mov al,54h
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints T
+		
+	mov al,45h
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints E
+	
+	mov al,0A0h
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints Space
+	
+	mov al,50h
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints P
+	
+	mov al,41h
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints A
+		
+	mov al,53h
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints S
+	
+	mov al,53h
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints S
+	
+	mov al,57h
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints W
+	
+	mov al,4Fh
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints O
+	
+	mov al,52h
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints R
+	
+	mov al,44h
+	out 00h,al
+	call DELAY_20ms
+	mov al,05h
+	out 02h,al
+	call DELAY_20ms
+	mov al,01h
+	out 02h,al  ;prints D
+
+ret
+update_msg endp
+
 
 clear_1digit_LCD proc
 	mov al,00h
-	out B1,al
+	out 02h,al
 	call DELAY_20ms
 	mov al,10h			;shift left by 1 
-	out A1,al
+	out 00h,al
 	call DELAY_20ms
 	mov al,04h
-	out B1,al
+	out 02h,al
 	call DELAY_20ms
 	mov al,00h
-	out B1,al  
+	out 02h,al  
 	
 	mov al,0A0h
-	out A1,al
+	out 00h,al
 	call DELAY_20ms
 	mov al,05h
-	out B1,al
+	out 02h,al
 	call DELAY_20ms
 	mov al,01h
-	out B1,al 			;prints Space
+	out 02h,al 			;prints Space
 	
 	call DELAY_20ms
 	mov al,10h			;shift left by 1 
-	out A1,al
+	out 00h,al
 	call DELAY_20ms
 	mov al,04h
-	out B1,al
+	out 02h,al
 	call DELAY_20ms
 	mov al,00h
-	out B1,al  
+	out 02h,al  
 	
 RET
 clear_1digit_LCD endp	
@@ -1425,7 +1575,7 @@ Nmi_24hrtimer:
 		  		call updateday_msg
 startnmi:	
 
-		call keypad_inp
+		call keypad_input
 		cmp al,0bbh
 		jz master_mode
 		jmp startnmi
